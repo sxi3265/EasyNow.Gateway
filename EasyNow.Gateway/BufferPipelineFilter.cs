@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.IO;
 using System.Text;
 using SuperSocket.ProtoBase;
 
@@ -169,6 +166,8 @@ namespace EasyNow.Gateway
         {
             _bodyLength = 0;
             _currentResponse = null;
+            chunked = false;
+            chunkedCurrentLength = 0;
             total=new ReadOnlySequence<byte>();
             body=new ReadOnlySequence<byte>();
         }
