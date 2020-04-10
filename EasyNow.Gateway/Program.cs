@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -36,13 +37,14 @@ namespace EasyNow.Gateway
                 {
                     var appSession = (GatewaySession) s;
                     var options = appSession.LifetimeScope.Resolve<IOptionsSnapshot<GatewayOptions>>();
-                    var forwardConfig = options.Value.ForwardConfigs.FirstOrDefault(e => e.Path == p.Path);
+                    var forwardConfig = options.Value.ForwardConfigs.FirstOrDefault(e => e.Match(p.Path));
                     if (forwardConfig == null)
                     {
                         await s.SendAsync(responsePackageEncoder, notFoundResp);
                         return;
                     }
                     p.Header["host"] = forwardConfig.Target.Host;
+                    p.Path = forwardConfig.TransferPath(p.Path);
                     var request = p.ToString();
                     if (!stack.TryPop(out var client))
                     {
@@ -61,7 +63,10 @@ namespace EasyNow.Gateway
                         await s.SendAsync(responsePackageEncoder, response);
                     }
                 }, (s, e) => { return new ValueTask<bool>(); })
-                .ConfigureLogging((hostCtx, loggingBuilder) => { loggingBuilder.AddConsole(); })
+                .ConfigureLogging((hostCtx, loggingBuilder) =>
+                {
+                    loggingBuilder.AddConsole();
+                })
                 .ConfigureServices((hostCtx, services) =>
                 {
                     services.Configure<GatewayOptions>(hostCtx.Configuration.GetSection("Gateway"));

@@ -10,7 +10,7 @@ namespace EasyNow.Gateway
 
         public string Method { get; }
 
-        public string Path { get; }
+        public string Path { get; set; }
 
         public string HttpVersion { get; }
 
