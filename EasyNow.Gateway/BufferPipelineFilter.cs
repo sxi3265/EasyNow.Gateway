@@ -29,8 +29,8 @@ namespace EasyNow.Gateway
             {
                 if (!reader.TryReadTo(out ReadOnlySequence<byte> pack, _CRLF.Span, advancePastDelimiter: false))
                     return null;
-                total = ConcactSequence(total, pack);
-                total = ConcactSequence(total,new ReadOnlySequence<byte>(_CRLF) );
+                total = total.ConcactSequence(pack);
+                total = total.ConcactSequence(new ReadOnlySequence<byte>(_CRLF) );
 
                 reader.Advance(_CRLF.Length);
                 var statusLine=pack.GetString(Encoding.UTF8);
@@ -45,8 +45,8 @@ namespace EasyNow.Gateway
                 }
                 if (!reader.TryReadTo(out  pack, _headerTerminator.Span, advancePastDelimiter: false))
                     return null;
-                total = ConcactSequence(total, pack);
-                total = ConcactSequence(total,new ReadOnlySequence<byte>(_headerTerminator));
+                total = total.ConcactSequence( pack);
+                total = total.ConcactSequence(new ReadOnlySequence<byte>(_headerTerminator));
                 reader.Advance(_headerTerminator.Length);
                 var header = new HttpHeader(pack);
                 if (!int.TryParse(metaInfos[1], out var statusCode))
@@ -87,12 +87,12 @@ namespace EasyNow.Gateway
                         return null;
                     reader.Advance(_CRLF.Length);
                     chunkedCurrentLength = Convert.ToInt32($"0x{pack.GetString(Encoding.UTF8)}", 16);
-                    body = ConcactSequence(body, pack);
-                    body = ConcactSequence(body, new ReadOnlySequence<byte>(_CRLF));
+                    body = body.ConcactSequence(pack);
+                    body = body.ConcactSequence(new ReadOnlySequence<byte>(_CRLF));
                     if (chunkedCurrentLength == 0)
                     {
-                        body = ConcactSequence(body, new ReadOnlySequence<byte>(_CRLF));
-                        total = ConcactSequence(total, body,false);
+                        body = body.ConcactSequence(new ReadOnlySequence<byte>(_CRLF));
+                        total = total.ConcactSequence(body,false);
                         _currentResponse.Data = total;
                         return _currentResponse;
                     }
@@ -103,8 +103,8 @@ namespace EasyNow.Gateway
                 }
 
                 var chunkedPack=reader.Sequence.Slice(reader.Consumed, this.chunkedCurrentLength);
-                body = ConcactSequence(body, chunkedPack);
-                body = ConcactSequence(body, new ReadOnlySequence<byte>(_CRLF));
+                body = body.ConcactSequence(chunkedPack);
+                body = body.ConcactSequence(new ReadOnlySequence<byte>(_CRLF));
                 reader.Advance(chunkedCurrentLength);
                 reader.Advance(_CRLF.Length);
                 chunkedCurrentLength = 0;
@@ -112,7 +112,7 @@ namespace EasyNow.Gateway
             }
 
 
-            body = ConcactSequence(body, reader.Sequence.Slice(reader.Consumed, reader.Remaining));
+            body = body.ConcactSequence(reader.Sequence.Slice(reader.Consumed, reader.Remaining));
 
             reader.Advance(reader.Remaining);
 
@@ -122,44 +122,9 @@ namespace EasyNow.Gateway
             }
 
             
-            total = ConcactSequence(total, body,false);
+            total = total.ConcactSequence(body,false);
             _currentResponse.Data = total;
             return _currentResponse;
-        }
-
-        private ReadOnlySequence<byte> ConcactSequence(ReadOnlySequence<byte> first, ReadOnlySequence<byte> second,bool cloneSecond=true)
-        {
-            if (cloneSecond)
-            {
-                second=new ReadOnlySequence<byte>(second.ToArray());
-            }
-            SequenceSegment head = first.Start.GetObject() as SequenceSegment;
-            SequenceSegment tail = first.End.GetObject() as SequenceSegment;
-            
-            if (head == null)
-            {
-                foreach (var segment in first)
-                {                
-                    if (head == null)
-                        tail = head = new SequenceSegment(segment);
-                    else
-                        tail = tail.SetNext(segment);
-                }
-            }
-
-            foreach (var segment in second)
-            {
-                if (tail == null)
-                {
-                    head=tail=new SequenceSegment(segment);
-                }
-                else
-                {
-                    tail = tail.SetNext(segment);
-                }
-            }
-
-            return new ReadOnlySequence<byte>(head, 0, tail, tail.Memory.Length);
         }
 
         public void Reset()

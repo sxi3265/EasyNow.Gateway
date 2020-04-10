@@ -18,6 +18,11 @@ namespace EasyNow.Gateway
 
         public string[] AllKeys => _items.AllKeys;
 
+        public HttpHeader(NameValueCollection nameValueCollection)
+        {
+            _items = nameValueCollection;
+        }
+
         public HttpHeader(ReadOnlySequence<byte> data)
         {
             Data = data;

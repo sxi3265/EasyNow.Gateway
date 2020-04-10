@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -24,6 +25,11 @@ namespace EasyNow.Gateway
             {
                 UseCache = true
             });
+            var notFoundNameValueCollection = new NameValueCollection {{"Content-Length", "0"}};
+            var notFoundHeader = new HttpHeader(notFoundNameValueCollection);
+            var notFoundResp = new HttpResponse("HTTP/1.1",404,"Not Found",notFoundHeader);
+            notFoundResp.BuildData();
+            var responsePackageEncoder = new HttpResponsePackageEncoder();
             var host = SuperSocketHostBuilder
                 .Create<HttpRequest, GatewayService, HttpPipelineFilter>()
                 .ConfigurePackageHandler<HttpRequest>(async (s, p) =>
@@ -33,7 +39,7 @@ namespace EasyNow.Gateway
                     var forwardConfig = options.Value.ForwardConfigs.FirstOrDefault(e => e.Path == p.Path);
                     if (forwardConfig == null)
                     {
-                        //todo 返回404
+                        await s.SendAsync(responsePackageEncoder, notFoundResp);
                         return;
                     }
                     p.Header["host"] = forwardConfig.Target.Host;
@@ -52,7 +58,7 @@ namespace EasyNow.Gateway
                     stack.Push(client);
                     if (response != null)
                     {
-                        await s.SendAsync(new HttpResponsePackageEncoder(), response);
+                        await s.SendAsync(responsePackageEncoder, response);
                     }
                 }, (s, e) => { return new ValueTask<bool>(); })
                 .ConfigureLogging((hostCtx, loggingBuilder) => { loggingBuilder.AddConsole(); })
