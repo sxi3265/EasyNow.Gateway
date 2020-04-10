@@ -13,8 +13,6 @@ namespace EasyNow.Gateway
 
         public HttpHeader Header { get; }
 
-        public string Body { get; set; }
-
         public ReadOnlySequence<byte> Data { get; set; }
 
         public HttpResponse(string httpVersion,int statusCode,string reasonPhrase,HttpHeader httpHeader)

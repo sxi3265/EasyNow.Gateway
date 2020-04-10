@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -10,8 +10,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SuperSocket.Client" Version="2.0.0-preview3-01" />
-    <PackageReference Include="SuperSocket.Server" Version="2.0.0-preview3-01" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="DnsClient" Version="1.3.1" />
+    <PackageReference Include="SuperSocket.Client" Version="2.0.0-preview3-03" />
+    <PackageReference Include="SuperSocket.Server" Version="2.0.0-preview3-03" />
   </ItemGroup>
 
   <ItemGroup>
